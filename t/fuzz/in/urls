@@ -1,0 +1,9 @@
+
+x
+not a url
+httpx:blah
+http:blah
+http://www.google.com
+http://127.0.0.1:8080/v1/api
+http://127.0.0.1:8080/v1/api?q=s
+http://127.0.0.1:8080/v1/api?q=s#frag

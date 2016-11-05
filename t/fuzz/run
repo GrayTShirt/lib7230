@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [[ -d t/fuzz/findings ]]; then
+  echo "Findings from a previous run found!"
+  echo "Remove them first (rm -r t/fuzz/findings)"
+  echo "before continuing..."
+  exit 1
+fi
+
+make
+afl-fuzz -i t/fuzz/in -o t/fuzz/findings ./t/urlparser

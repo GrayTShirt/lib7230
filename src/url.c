@@ -21,7 +21,7 @@ http_parse_uri(const char *uri)
 		return NULL;
 	}
 
-	u = calloc(1, sizeof(http_uri_t) + len + 1);
+	u = calloc(1, sizeof(*u) + len + 1);
 	if (!u) {
 		errno = ENOBUFS;
 		return NULL;
@@ -39,6 +39,16 @@ http_parse_uri(const char *uri)
 		return NULL;
 	}
 	*p = '\0';
+	if (strncmp(u->scheme, "http", 4) == 0) {
+		u->port = 80;
+	} else if (strncmp(u->scheme, "https", 5) == 0) {
+		u->port = 443;
+	} else {
+		/* unrecognized scheme */
+		errno = EINVAL;
+		free(u);
+		return NULL;
+	}
 
 	/* verify that the scheme is followed by '//' */
 	p++;
@@ -55,7 +65,7 @@ http_parse_uri(const char *uri)
 	}
 
 	/* extract the hostname */
-	u->host = p-1;
+	u->host = p++;
 	while (*p && *p != ':' && *p != '/') {
 		*(p-1) = *p;
 		p++;
@@ -67,24 +77,25 @@ http_parse_uri(const char *uri)
 		p++;
 		u->port = 0;
 		while (isdigit(*p)) {
-			u->port *= 10 + *p - '0';
+			u->port = u->port * 10 + *p - '0';
 			if (u->port > 65535) {
 				/* port out of range */
 				errno = EINVAL;
 				free(u);
 				return NULL;
 			}
+			p++;
 		}
 	}
 
 	/* do we have a path? */
 	if (*p == '/') {
 		u->path = p;
-		if ((p = strchr(p, '?')) != NULL) {
+		if (p && (p = strchr(p, '?')) != NULL) {
 			*p++ = '\0';
 			u->rawquery = p;
 		}
-		if ((p = strchr(p, '#')) != NULL) {
+		if (p && (p = strchr(p, '#')) != NULL) {
 			*p++ = '\0';
 			u->fragment = p;
 		}
